@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPA & CGPA Calculator — GC (AI)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2ff;
+  --card: #ffffff;
+  --border: #e2e4ed;
+  --text: #1a1c2e;
+  --text2: #555770;
+  --muted: #9898b0;
+  --accent: #4361ee;
+  --accent2: #3a0ca3;
+  --accent-light: #eef1fd;
+  --shadow: 0 2px 16px rgba(67,97,238,0.10);
+  --shadow-lg: 0 8px 32px rgba(67,97,238,0.18);
+}
+[data-theme="dark"] {
+  --bg: #0f1117;
+  --card: #1a1d2b;
+  --border: #272a3d;
+  --text: #e8eaf6;
+  --text2: #9090b0;
+  --muted: #555570;
+  --accent: #7c8ef7;
+  --accent2: #a5b4fc;
+  --accent-light: #1a1e3a;
+  --shadow: 0 2px 16px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s}
+
+/* TOP BAR */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+.logo{font-weight:700;font-size:15px;color:var(--accent);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+.logo sub{font-size:10px;font-weight:400;color:var(--muted);letter-spacing:0.04em;font-family:'DM Mono',monospace}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 13px;cursor:pointer;font-size:12px;color:var(--text2);font-family:'Inter',sans-serif;transition:all 0.15s}
+.theme-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+
+/* WRAP */
+.wrap{max-width:660px;margin:0 auto;padding:24px 16px 80px}
+
+/* TABS */
+.tabs{display:flex;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;margin-bottom:24px;box-shadow:var(--shadow)}
+.tab{flex:1;padding:10px;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:none;color:var(--text2);transition:all 0.2s;letter-spacing:0.01em}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(67,97,238,0.35)}
+.tab:not(.active):hover{background:var(--accent-light);color:var(--accent)}
+
+/* PANEL */
+.panel{display:none}
+.panel.active{display:block}
+
+/* ══ GRADING SCALE CARD ══ */
+.scale-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.scale-header{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.scale-header-title{color:#fff;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+.scale-header-sub{color:rgba(255,255,255,0.65);font-size:11px;font-family:'DM Mono',monospace}
+.scale-body{padding:16px}
+.scale-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grade-tile{border-radius:10px;padding:11px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid transparent;transition:transform 0.15s;cursor:default}
+.grade-tile:hover{transform:translateY(-2px)}
+.gt-letter{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;line-height:1}
+.gt-marks{font-size:10px;font-weight:500;opacity:0.75;letter-spacing:0.01em}
+.gt-gp{font-size:10px;font-family:'DM Mono',monospace;opacity:0.65}
+
+/* tile colors */
+.t-a   {background:#e8faf3;border-color:#a7f3d0;color:#065f46}
+.t-am  {background:#ecfdf8;border-color:#6ee7b7;color:#0b7b56}
+.t-bp  {background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+.t-b   {background:#f0f2ff;border-color:#a5b4fc;color:#4338ca}
+.t-bm  {background:#f5f3ff;border-color:#c4b5fd;color:#5b21b6}
+.t-cp  {background:#fffbeb;border-color:#fde68a;color:#92400e}
+.t-c   {background:#fff8e1;border-color:#fcd34d;color:#a16207}
+.t-d   {background:#fff7ed;border-color:#fdba74;color:#9a3412}
+.t-f   {background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+
+[data-theme="dark"] .t-a  {background:#022c1e;border-color:#065f46;color:#6ee7b7}
+[data-theme="dark"] .t-am {background:#032a1c;border-color:#0b7b56;color:#34d399}
+[data-theme="dark"] .t-bp {background:#0e1230;border-color:#3730a3;color:#a5b4fc}
+[data-theme="dark"] .t-b  {background:#10122e;border-color:#4338ca;color:#818cf8}
+[data-theme="dark"] .t-bm {background:#130d2a;border-color:#5b21b6;color:#c4b5fd}
+[data-theme="dark"] .t-cp {background:#1c1400;border-color:#92400e;color:#fcd34d}
+[data-theme="dark"] .t-c  {background:#1a1200;border-color:#a16207;color:#fbbf24}
+[data-theme="dark"] .t-d  {background:#1c0f00;border-color:#9a3412;color:#fdba74}
+[data-theme="dark"] .t-f  {background:#1f0505;border-color:#991b1b;color:#f87171}
+
+.scale-note{margin-top:12px;background:var(--accent-light);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;letter-spacing:0.02em;text-align:center}
+
+/* ══ CALCULATOR BOX ══ */
+.box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.box-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
+
+.count-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.count-label{font-size:13px;color:var(--text2);font-weight:500}
+.stepper{display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)}
+.stepper button{width:32px;height:32px;border:none;background:none;cursor:pointer;color:var(--accent);font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background 0.12s}
+.stepper button:hover{background:var(--accent-light)}
+.stepper input{width:44px;height:32px;border:none;background:none;text-align:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);outline:none}
+.btn-gen{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.15s}
+.btn-gen:hover{opacity:0.87}
+
+.thead{display:grid;gap:8px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.thead span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.gth{grid-template-columns:32px 1fr 100px 80px}
+.cth{grid-template-columns:32px 1fr 90px 90px}
+
+.rows{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.row{display:grid;gap:8px;align-items:center}
+.grow{grid-template-columns:32px 1fr 100px 80px}
+.crow{grid-template-columns:32px 1fr 90px 90px}
+.rnum{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center}
+
+input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);width:100%;outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(67,97,238,0.1)}
+input::placeholder{color:var(--muted)}
+
+.mc{position:relative}
+.mc input{padding-right:38px}
+.gbadge{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-family:'DM Mono',monospace;font-size:10px;font-weight:700;pointer-events:none;border-radius:4px;padding:2px 5px}
+.gba {background:#e8faf3;color:#065f46}
+.gbam{background:#ecfdf8;color:#0b7b56}
+.gbbp{background:#eef2ff;color:#3730a3}
+.gbb {background:#f0f2ff;color:#4338ca}
+.gbbm{background:#f5f3ff;color:#5b21b6}
+.gbcp{background:#fffbeb;color:#92400e}
+.gbc {background:#fff8e1;color:#a16207}
+.gbd {background:#fff7ed;color:#9a3412}
+.gbf {background:#fef2f2;color:#991b1b}
+[data-theme="dark"] .gba {background:#022c1e;color:#6ee7b7}
+[data-theme="dark"] .gbam{background:#032a1c;color:#34d399}
+[data-theme="dark"] .gbbp{background:#0e1230;color:#a5b4fc}
+[data-theme="dark"] .gbb {background:#10122e;color:#818cf8}
+[data-theme="dark"] .gbbm{background:#130d2a;color:#c4b5fd}
+[data-theme="dark"] .gbcp{background:#1c1400;color:#fcd34d}
+[data-theme="dark"] .gbc {background:#1a1200;color:#fbbf24}
+[data-theme="dark"] .gbd {background:#1c0f00;color:#fdba74}
+[data-theme="dark"] .gbf {background:#1f0505;color:#f87171}
+
+.btn-calc{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.15s,transform 0.1s;box-shadow:0 4px 14px rgba(67,97,238,0.3);letter-spacing:0.01em}
+.btn-calc:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-calc:active{transform:scale(0.98)}
+
+/* RESULT */
+.result{background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;padding:24px;text-align:center;display:none;margin-top:16px;box-shadow:var(--shadow-lg)}
+.result.show{display:block;animation:pop 0.38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0.82);opacity:0}to{transform:scale(1);opacity:1}}
+.res-label{font-size:11px;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:0.12em;font-family:'DM Mono',monospace;margin-bottom:6px}
+.res-val{font-size:3.5rem;font-weight:700;color:#fff;line-height:1;letter-spacing:-0.03em}
+.res-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px}
+.res-tag{display:inline-block;margin-top:12px;background:rgba(255,255,255,0.18);color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:5px 18px;border-radius:99px;border:1px solid rgba(255,255,255,0.3);letter-spacing:0.04em}
+
+.breakdown{margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.breakdown-head{padding:10px 16px;background:var(--accent-light);font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;display:flex;justify-content:space-between}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.breakdown-row:last-child{border-bottom:none}
+.bn{color:var(--text2)}
+.bv{font-family:'DM Mono',monospace;font-weight:600;color:var(--text)}
+
+@media(max-width:500px){
+  .scale-grid{grid-template-columns:repeat(3,1fr)}
+  .gth,.grow{grid-template-columns:28px 1fr 86px 68px}
+  .cth,.crow{grid-template-columns:28px 1fr 80px 80px}
+  .res-val{font-size:2.8rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    GPA &amp; CGPA
+    <sub>GC (AI) UOH under the supervision of Mudassar (4A AI)</sub>
+  </div>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Dark</button>
+</div>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('gpa',this)">📊 GPA Calculator</button>
+    <button class="tab" onclick="switchTab('cgpa',this)">🎓 CGPA Calculator</button>
+  </div>
+
+  <!-- ═══ GPA PANEL ═══ -->
+  <div class="panel active" id="panel-gpa">
+
+    <!-- Grading Scale -->
+    <div class="scale-card">
+      <div class="scale-header">
+        <div>
+          <div class="scale-header-title">Grading Scale</div>
+          <div class="scale-header-sub">Absolute marking · Total marks: 100</div>
+        </div>
+        <div style="font-size:22px">📋</div>
+      </div>
+      <div class="scale-body">
+        <div class="scale-grid">
+          <div class="grade-tile t-a">
+            <div class="gt-letter">A</div>
+            <div class="gt-marks">85% – 100%</div>
+            <div class="gt-gp">GP: 4.00</div>
+          </div>
+          <div class="grade-tile t-am">
+            <div class="gt-letter">A-</div>
+            <div class="gt-marks">80% – 84%</div>
+            <div class="gt-gp">GP: 3.50–3.99</div>
+          </div>
+          <div class="grade-tile t-bp">
+            <div class="gt-letter">B+</div>
+            <div class="gt-marks">75% – 79%</div>
+            <div class="gt-gp">GP: 3.00–3.49</div>
+          </div>
+          <div class="grade-tile t-b">
+            <div class="gt-letter">B</div>
+            <div class="gt-marks">70% – 74%</div>
+            <div class="gt-gp">GP: 2.50–2.99</div>
+          </div>
+          <div class="grade-tile t-bm">
+            <div class="gt-letter">B-</div>
+            <div class="gt-marks">65% – 69%</div>
+            <div class="gt-gp">GP: 2.00–2.49</div>
+          </div>
+          <div class="grade-tile t-cp">
+            <div class="gt-letter">C+</div>
+            <div class="gt-marks">60% – 64%</div>
+            <div class="gt-gp">GP: 1.50–1.99</div>
+          </div>
+          <div class="grade-tile t-c">
+            <div class="gt-letter">C</div>
+            <div class="gt-marks">55% – 59%</div>
+            <div class="gt-gp">GP: 1.00–1.49</div>
+          </div>
+          <div class="grade-tile t-d">
+            <div class="gt-letter">D</div>
+            <div class="gt-marks">50% – 54%</div>
+            <div class="gt-gp">GP: 0.50–0.99</div>
+          </div>
+          <div class="grade-tile t-f">
+            <div class="gt-letter">F</div>
+            <div class="gt-marks">Below 50%</div>
+            <div class="gt-gp">GP: 0.00</div>
+          </div>
+        </div>
+        <div class="scale-note">⚡ Grade points are interpolated within each range based on exact marks</div>
+      </div>
+    </div>
+
+    <!-- Calculator -->
+    <div class="box">
+      <div class="box-title">Semester GPA · Enter marks out of 100</div>
+      <div class="count-row">
+        <span class="count-label">Subjects</span>
+        <div class="stepper">
+          <button onclick="adj('gpa-count',-1)">−</button>
+          <input type="number" id="gpa-count" value="5" min="1" max="20">
+          <button onclick="adj('gpa-count',1)">+</button>
+        </div>
+        <button class="btn-gen" onclick="genGPA()">Generate</button>
+      </div>
+      <div class="thead gth">
+        <span>#</span><span>Subject</span><span>Marks %</span><span>Credits</span>
+      </div>
+      <div class="rows" id="gpa-rows"></div>
+      <button class="btn-calc" onclick="calcGPA()">⚡ Calculate GPA</button>
+    </div>
+
+    <div class="result" id="gpa-res">
+      <div class="res-label">Your Semester GPA</div>
+      <div class="res-val" id="gpa-val">—</div>
+      <div class="res-sub" id="gpa-sub"></div>
+      <div class="res-tag" id="gpa-tag"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══ CGPA PANEL ═══ -->
+  <div class="panel" id="panel-cgpa">
+
+    <div class="box">
+      <div class="box-title">CGPA · Enter GPA &amp; credits per semester</div>
+      <div class="count-row">
+        <span class="count-label">Semesters</span>
+        <div class="stepper">
+          <button onclick="adj('cgpa-count',-1)">−</button>
+          <input type="number" id="cgpa-count" value="2" min="1" max="16">
+          <button onclick="adj('cgpa-count',1)">+</button>
+        </div>
+        <button class="btn-gen" onclick="genCGPA()">Generate</button>
+      </div>
+      <div class="thead cth">
+        <span>#</span><span>Semester</span><span>GPA</span><span>Credits</span>
+      </div>
+      <div class="rows" id="cgpa-rows"></div>
+      <button class="btn-calc" onclick="calcCGPA()">⚡ Calculate CGPA</button>
+    </div>
+
+    <div class="result" id="cgpa-res">
+      <div class="res-label">Your Cumulative CGPA</div>
+      <div class="res-val" id="cgpa-val">—</div>
+      <div class="res-sub" id="cgpa-sub"></div>
+      <div class="res-tag" id="cgpa-tag"></div>
+    </div>
+
+    <div class="breakdown" id="breakdown" style="display:none">
+      <div class="breakdown-head"><span>Semester</span><span>GPA</span></div>
+    </div>
+
+  </div>
+
+</div>
+<footer> BS AI (B)</footer>
+
+<script>
+const SCALE = [
+  {min:85,max:100,letter:'A',  gpMin:4.00,gpMax:4.00,bc:'gba'},
+  {min:80,max:84, letter:'A-', gpMin:3.50,gpMax:3.99,bc:'gbam'},
+  {min:75,max:79, letter:'B+', gpMin:3.00,gpMax:3.49,bc:'gbbp'},
+  {min:70,max:74, letter:'B',  gpMin:2.50,gpMax:2.99,bc:'gbb'},
+  {min:65,max:69, letter:'B-', gpMin:2.00,gpMax:2.49,bc:'gbbm'},
+  {min:60,max:64, letter:'C+', gpMin:1.50,gpMax:1.99,bc:'gbcp'},
+  {min:55,max:59, letter:'C',  gpMin:1.00,gpMax:1.49,bc:'gbc'},
+  {min:50,max:54, letter:'D',  gpMin:0.50,gpMax:0.99,bc:'gbd'},
+  {min:0, max:49, letter:'F',  gpMin:0.00,gpMax:0.00,bc:'gbf'},
+];
+
+function getGrade(marks) {
+  const m = parseFloat(marks);
+  if (isNaN(m) || m < 0 || m > 100) return null;
+  const s = SCALE.find(r => m >= r.min && m <= r.max);
+  if (!s) return null;
+  let gp = s.gpMin;
+  if (s.gpMax !== s.gpMin && s.max !== s.min)
+    gp = s.gpMin + (m - s.min) / (s.max - s.min) * (s.gpMax - s.gpMin);
+  return { ...s, gp };
+}
+
+function standing(gp) {
+  if (gp >= 3.5) return '🏆 Dean\'s List';
+  if (gp >= 3.0) return '⭐ Distinction';
+  if (gp >= 2.5) return '✅ Good Standing';
+  if (gp >= 2.0) return '📘 Satisfactory';
+  if (gp >= 0.5) return '📄 Pass';
+  return '❌ Fail';
+}
+
+let dark = false;
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
+  document.getElementById('themeBtn').textContent = dark ? '☀️ Light' : '🌙 Dark';
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+function adj(id, d) {
+  const el = document.getElementById(id);
+  const max = id.startsWith('cgpa') ? 16 : 20;
+  el.value = Math.max(1, Math.min(parseInt(el.value || 1) + d, max));
+}
+
+function genGPA() {
+  const n = parseInt(document.getElementById('gpa-count').value) || 5;
+  const cont = document.getElementById('gpa-rows');
+  cont.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    const d = document.createElement('div');
+    d.className = 'row grow';
+    d.innerHTML = `
+      <span class="rnum">${i}</span>
+      <input type="text" placeholder="Subject ${i}" id="gn-${i}">
+      <div class="mc">
+        <input type="number" placeholder="0–100" min="0" max="100" step="1" id="gm-${i}" oninput="liveBadge(${i})">
+        <span class="gbadge" id="gb-${i}"></span>
+      </div>
+      <input type="number" placeholder="Cr" min="1" max="6" value="3" id="gc-${i}">`;
+    cont.appendChild(d);
+  }
+  document.getElementById('gpa-res').classList.remove('show');
+}
+
+function liveBadge(i) {
+  const val = document.getElementById('gm-' + i).value;
+  const b = document.getElementById('gb-' + i);
+  const g = getGrade(val);
+  if (g) { b.textContent = g.letter; b.className = 'gbadge ' + g.bc; }
+  else { b.textContent = ''; b.className = 'gbadge'; }
+}
+
+function calcGPA() {
+  const n = parseInt(document.getElementById('gpa-count').value) || 5;
+  if (!document.getElementById('gm-1')) genGPA();
+  let pts = 0, cr = 0;
+  for (let i = 1; i <= n; i++) {
+    const g = getGrade(document.getElementById('gm-' + i)?.value);
+    const c = parseFloat(document.getElementById('gc-' + i)?.value) || 0;
+    if (g && c > 0) { pts += g.gp * c; cr += c; }
+  }
+  const res = document.getElementById('gpa-res');
+  if (cr === 0) { res.classList.remove('show'); return; }
+  const gpa = pts / cr;
+  document.getElementById('gpa-val').textContent = gpa.toFixed(2);
+  document.getElementById('gpa-sub').textContent = cr + ' credit hours · out of 4.00';
+  document.getElementById('gpa-tag').textContent = standing(gpa);
+  res.classList.add('show');
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function genCGPA() {
+  const n = parseInt(document.getElementById('cgpa-count').value) || 2;
+  const cont = document.getElementById('cgpa-rows');
+  cont.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    const d = document.createElement('div');
+    d.className = 'row crow';
+    d.innerHTML = `
+      <span class="rnum">${i}</span>
+      <input type="text" value="Semester ${i}" id="csn-${i}">
+      <input type="number" placeholder="0.00–4.00" min="0" max="4" step="0.01" id="cg-${i}">
+      <input type="number" placeholder="Credits" min="1" max="30" value="18" id="cc-${i}">`;
+    cont.appendChild(d);
+  }
+  document.getElementById('cgpa-res').classList.remove('show');
+  document.getElementById('breakdown').style.display = 'none';
+}
+
+function calcCGPA() {
+  const n = parseInt(document.getElementById('cgpa-count').value) || 2;
+  if (!document.getElementById('cg-1')) genCGPA();
+  let pts = 0, cr = 0;
+  const rows = [];
+  for (let i = 1; i <= n; i++) {
+    const g = parseFloat(document.getElementById('cg-' + i)?.value);
+    const c = parseFloat(document.getElementById('cc-' + i)?.value) || 0;
+    const name = document.getElementById('csn-' + i)?.value || 'Semester ' + i;
+    if (!isNaN(g) && g >= 0 && g <= 4 && c > 0) {
+      pts += g * c; cr += c;
+      rows.push({ name, gpa: g });
+    }
+  }
+  const res = document.getElementById('cgpa-res');
+  if (cr === 0) { res.classList.remove('show'); return; }
+  const cgpa = pts / cr;
+  document.getElementById('cgpa-val').textContent = cgpa.toFixed(2);
+  document.getElementById('cgpa-sub').textContent = rows.length + ' semesters · ' + cr + ' total credits · out of 4.00';
+  document.getElementById('cgpa-tag').textContent = standing(cgpa);
+  res.classList.add('show');
+
+  const bd = document.getElementById('breakdown');
+  bd.style.display = 'block';
+  const existingRows = bd.querySelectorAll('.breakdown-row');
+  existingRows.forEach(r => r.remove());
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'breakdown-row';
+    row.innerHTML = `<span class="bn">${r.name}</span><span class="bv">${r.gpa.toFixed(2)}</span>`;
+    bd.appendChild(row);
+  });
+
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+genGPA();
+genCGPA();
+</script>
+</body>
+</html>
